@@ -1,0 +1,24 @@
+{
+    "name": "bemit/auth-middleware",
+    "license": "MIT",
+    "homepage": "https://bemit.eu",
+    "version": "0.0.1",
+    "description": "Custom PSR Middleware for multi project auth & auth with Auth0.",
+    "require": {
+        "php": ">=7.4||>=8.0",
+        "auth0/auth0-php": "^7.8",
+        "psr/http-client": "*",
+        "psr/http-message": "*",
+        "psr/http-factory": "*",
+        "psr/http-server-handler": "*",
+        "psr/http-server-middleware": "*",
+        "psr/log": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Bemit\\AuthMiddleware\\": "src"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
