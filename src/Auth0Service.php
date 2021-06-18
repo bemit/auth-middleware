@@ -26,7 +26,7 @@ class Auth0Service {
         $this->logger = $logger;
     }
 
-    public function authBackend() {
+    protected function authBackend(): void {
         try {
             $auth_resp = $this->http_client->request('POST', $this->issuer . 'oauth/token', [
                 'json' => [
@@ -48,7 +48,7 @@ class Auth0Service {
         }
     }
 
-    public function management() {
+    public function management(): Management {
         if(!$this->backend_token) {
             $this->authBackend();
         }

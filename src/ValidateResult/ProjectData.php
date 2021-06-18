@@ -2,10 +2,10 @@
 
 namespace Bemit\AuthMiddleware\ValidateResult;
 
-class ProjectsData {
+class ProjectData {
     protected ?array $projects = null;
     protected ?string $project = null;
-    protected $roles = null;
+    protected ?\stdClass $roles = null;
     protected ?array $data = null;
 
     public function __construct(array $data) {
@@ -32,7 +32,7 @@ class ProjectsData {
         return $this->project;
     }
 
-    public function getRoles() {
+    public function getRoles(): ?\stdClass {
         return $this->roles;
     }
 }

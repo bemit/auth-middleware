@@ -6,14 +6,14 @@ use Auth0\SDK\Exception\InvalidTokenException;
 use Auth0\SDK\Helpers\JWKFetcher;
 use Auth0\SDK\Helpers\Tokens\AsymmetricVerifier;
 use Auth0\SDK\Helpers\Tokens\TokenVerifier;
-use Bemit\AuthMiddleware\ValidateResult\ProjectsData;
+use Bemit\AuthMiddleware\ValidateResult\ProjectData;
 use Bemit\AuthMiddleware\ValidateResult\TokenData;
 use Bemit\AuthMiddleware\ValidateResult\UserData;
 use Bemit\AuthMiddleware\ValidateResult\ValidateResult;
 
 class AuthService {
     protected string $issuer;
-    protected string $audience;
+    protected string $default_audience;
     protected string $namespace_user_data;
     protected string $namespace_projects;
     protected array $allowed_audiences;
@@ -27,22 +27,18 @@ class AuthService {
      */
     public function __construct(string $issuer, string $audience, string $namespace_user_data, string $namespace_projects, array $allowed_audiences) {
         $this->issuer = $issuer;
-        $this->audience = $audience;
+        $this->default_audience = $audience;
         $this->namespace_user_data = $namespace_user_data;
         $this->namespace_projects = $namespace_projects;
         $this->allowed_audiences = $allowed_audiences;
     }
 
-    public function validate(string $token, string $audience = ''): ?ValidateResult {
+    public function validate(string $token, ?string $audience = null): ?ValidateResult {
         try {
-            // todo: here it should be possible to add:
-            //       multi vhost / multi client authentication, based on configured project data
-
             $jwks_fetcher = new JWKFetcher();
-            // todo: also allow $issuer overrides, maybe depending on `hostname` for enterprise customers with own domain
             $jwks = $jwks_fetcher->getKeys($this->issuer . '.well-known/jwks.json');
             $sigVerifier = new AsymmetricVerifier($jwks);
-            $tokenVerifier = new TokenVerifier($this->issuer, $audience ?: $this->audience, $sigVerifier);
+            $tokenVerifier = new TokenVerifier($this->issuer, $audience ?? $this->default_audience, $sigVerifier);
             $token_data = [];
             $user_data = [];
             $projects = [];
@@ -68,7 +64,7 @@ class AuthService {
         } catch(\Exception $e) {
             return null;
         }
-        return new ValidateResult(new TokenData($token_data), new UserData($user_data), new ProjectsData($projects));
+        return new ValidateResult(new TokenData($token_data), new UserData($user_data), new ProjectData($projects));
     }
 
     public function isAudienceAllowed(string $audience): bool {
