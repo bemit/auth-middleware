@@ -2,7 +2,7 @@
     "name": "bemit/auth-middleware",
     "license": "MIT",
     "homepage": "https://bemit.eu",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Custom PSR Middleware for multi project auth & auth with Auth0.",
     "require": {
         "php": ">=7.4||>=8.0",
@@ -13,6 +13,9 @@
         "psr/http-server-handler": "*",
         "psr/http-server-middleware": "*",
         "psr/log": "*"
+    },
+    "suggest": {
+        "psr/simple-cache": "For caching issuer JWKs"
     },
     "autoload": {
         "psr-4": {

@@ -94,7 +94,9 @@ $dependencies = [
         ->constructorParameter('namespace_projects', 'https://id.namespace')
         ->constructorParameter('allowed_audiences', [
             $_ENV['AUTH_CLIENT_AUDIENCE'],
-        ]),
+        ])
+        // optional, for jwks caching:
+        ->constructorParameter('cache', get(Psr\SimpleCache\CacheInterface::class)),
     Bemit\AuthMiddleware\Auth0Service::class => autowire()
         ->constructorParameter('issuer', $_ENV['AUTH_CLIENT_ISSUER'])
         ->constructorParameter('client_id', $_ENV['AUTH0_CLIENT_ID'])
@@ -106,9 +108,7 @@ $dependencies = [
 
 ## License
 
-This project is free software distributed under the **MIT License**.
-
-See: [LICENSE](LICENSE).
+This project is free software distributed under the [**MIT License**](LICENSE).
 
 ### Contributors
 
