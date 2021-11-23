@@ -90,6 +90,8 @@ $dependencies = [
     Bemit\AuthMiddleware\AuthService::class => autowire()
         ->constructorParameter('issuer', $_ENV['AUTH_CLIENT_ISSUER'])
         ->constructorParameter('audience', $_ENV['AUTH_CLIENT_AUDIENCE'])
+        // use either frontend client id for e.g. APIs or otherwise same as for Auth0Service
+        ->constructorParameter('client_id', $_ENV['AUTH0_CLIENT_ID_FRONTEND'])
         ->constructorParameter('namespace_user_data', 'https://userdata')
         ->constructorParameter('namespace_projects', 'https://id.namespace')
         ->constructorParameter('allowed_audiences', [

@@ -3,9 +3,7 @@
 namespace Bemit\AuthMiddleware;
 
 use Auth0\SDK\Exception\InvalidTokenException;
-use Auth0\SDK\Helpers\JWKFetcher;
-use Auth0\SDK\Helpers\Tokens\AsymmetricVerifier;
-use Auth0\SDK\Helpers\Tokens\TokenVerifier;
+use Auth0\SDK\Token;
 use Bemit\AuthMiddleware\ValidateResult\ProjectData;
 use Bemit\AuthMiddleware\ValidateResult\TokenData;
 use Bemit\AuthMiddleware\ValidateResult\UserData;
@@ -15,37 +13,49 @@ use Psr\SimpleCache\CacheInterface;
 class AuthService {
     protected string $issuer;
     protected string $default_audience;
+    protected string $client_id;
     protected string $namespace_user_data;
     protected string $namespace_projects;
     protected array $allowed_audiences;
+    protected bool $debugInvalidJwt;
     protected ?CacheInterface $cache = null;
 
     /**
      * @param string $issuer
      * @param string $audience
+     * @param string $client_id
      * @param string $namespace_user_data
      * @param string $namespace_projects
      * @param array $allowed_audiences
+     * @param bool $debugInvalidJwt
      * @param CacheInterface|null $cache
      */
     public function __construct(
-        string $issuer, string $audience,
-        string $namespace_user_data, string $namespace_projects,
-        array $allowed_audiences,
-        ?CacheInterface $cache = null
+        string          $issuer, string $audience,
+        string          $client_id,
+        string          $namespace_user_data, string $namespace_projects,
+        array           $allowed_audiences,
+        ?CacheInterface $cache = null,
+        bool            $debugInvalidJwt = false,
     ) {
         $this->issuer = $issuer;
         $this->default_audience = $audience;
+        $this->client_id = $client_id;
         $this->namespace_user_data = $namespace_user_data;
         $this->namespace_projects = $namespace_projects;
         $this->allowed_audiences = $allowed_audiences;
         $this->cache = $cache;
+        $this->debugInvalidJwt = $debugInvalidJwt;
     }
 
-    protected function getJwk() {
-        $jwks_fetcher = new JWKFetcher($this->cache);
-        $jwks = $jwks_fetcher->getKeys($this->issuer . '.well-known/jwks.json');
-        return $jwks;
+
+    public function client(string $audience) {
+        return new \Auth0\SDK\Auth0([
+            'domain' => $this->issuer,
+            'clientId' => $this->client_id,
+            //'clientSecret' => $this->client_secret,
+            'audience' => $audience ? [$audience] : null,
+        ]);
     }
 
     /**
@@ -54,16 +64,19 @@ class AuthService {
      * @return ValidateResult|null
      */
     public function validate(string $token, ?string $audience = null): ?ValidateResult {
-        $jwks = $this->getJwk();
-        $sigVerifier = new AsymmetricVerifier($jwks);
-        $tokenVerifier = new TokenVerifier($this->issuer, $audience ?? $this->default_audience, $sigVerifier);
         $token_data = [];
         $user_data = [];
         $projects = [];
 
         try {
-            $tokenInfo = $tokenVerifier->verify($token);
-            if(is_array($tokenInfo)) {
+            $tokenInfoRes = $this->client($audience)->decode(
+                $token, null, null, null, null, null, null, Token::TYPE_TOKEN,
+            );
+
+            // todo: get rid of this re-conversion, needed for auth0 v8 compatibility
+            $tokenInfo = json_decode(json_encode($tokenInfoRes->toArray(), JSON_THROW_ON_ERROR), false, 512, JSON_THROW_ON_ERROR);
+            if($tokenInfo instanceof \stdClass) {
+                $tokenInfo = get_object_vars($tokenInfo);
                 foreach($tokenInfo as $key => $info) {
                     if(str_starts_with($key, $this->namespace_user_data . '/')) {
                         $user_data[substr($key, strlen($this->namespace_user_data . '/'))] = $info;
@@ -77,6 +90,9 @@ class AuthService {
                 }
             }
         } catch(InvalidTokenException $e) {
+            if($this->debugInvalidJwt) {
+                throw $e;
+            }
             return null;
         }
         return new ValidateResult(new TokenData($token_data), new UserData($user_data), new ProjectData($projects));

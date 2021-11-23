@@ -2,7 +2,9 @@
 
 namespace Bemit\AuthMiddleware;
 
-use Auth0\SDK\API\Management;
+use Auth0\SDK\Auth0;
+use Auth0\SDK\Configuration\SdkConfiguration;
+use Auth0\SDK\Contract\API\ManagementInterface;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Log\LoggerInterface;
@@ -18,7 +20,10 @@ class Auth0Service {
 
     private LoggerInterface $logger;
 
-    public function __construct(string $issuer, string $client_id, string $client_secret, ClientInterface $http_client, LoggerInterface $logger) {
+    public function __construct(
+        string          $issuer, string $client_id, string $client_secret,
+        ClientInterface $http_client, LoggerInterface $logger,
+    ) {
         $this->issuer = $issuer;
         $this->client_id = $client_id;
         $this->client_secret = $client_secret;
@@ -48,10 +53,19 @@ class Auth0Service {
         }
     }
 
-    public function management(): Management {
+    public function management(): ManagementInterface {
+        // The process for retrieving an Access Token for Management API endpoints is described here:
+        // https://auth0.com/docs/libraries/auth0-php/using-the-management-api-with-auth0-php
         if(!$this->backend_token) {
             $this->authBackend();
         }
-        return new Management($this->backend_token, substr(substr($this->issuer, strlen('https://')), 0, -1));
+        $configuration = new SdkConfiguration(
+            domain: $this->issuer,
+            clientId: $this->client_id,
+            clientSecret: $this->client_secret,
+            managementToken: $this->backend_token,
+        );
+
+        return (new Auth0($configuration))->management();
     }
 }
