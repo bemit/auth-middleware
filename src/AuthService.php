@@ -8,7 +8,7 @@ use Bemit\AuthMiddleware\ValidateResult\ProjectData;
 use Bemit\AuthMiddleware\ValidateResult\TokenData;
 use Bemit\AuthMiddleware\ValidateResult\UserData;
 use Bemit\AuthMiddleware\ValidateResult\ValidateResult;
-use Psr\SimpleCache\CacheInterface;
+use Psr\Cache\CacheItemPoolInterface;
 
 class AuthService {
     protected string $issuer;
@@ -17,8 +17,9 @@ class AuthService {
     protected string $namespace_user_data;
     protected string $namespace_projects;
     protected array $allowed_audiences;
-    protected bool $debugInvalidJwt;
-    protected ?CacheInterface $cache = null;
+    protected bool $debug_invalid_jwt;
+    protected ?CacheItemPoolInterface $cache = null;
+    protected ?int $cache_ttl = null;
 
     /**
      * @param string $issuer
@@ -27,16 +28,18 @@ class AuthService {
      * @param string $namespace_user_data
      * @param string $namespace_projects
      * @param array $allowed_audiences
-     * @param bool $debugInvalidJwt
-     * @param CacheInterface|null $cache
+     * @param CacheItemPoolInterface|null $cache
+     * @param int|null $cache_ttl
+     * @param bool $debug_invalid_jwt
      */
     public function __construct(
-        string          $issuer, string $audience,
-        string          $client_id,
-        string          $namespace_user_data, string $namespace_projects,
-        array           $allowed_audiences,
-        ?CacheInterface $cache = null,
-        bool            $debugInvalidJwt = false,
+        string                  $issuer, string $audience,
+        string                  $client_id,
+        string                  $namespace_user_data, string $namespace_projects,
+        array                   $allowed_audiences,
+        ?CacheItemPoolInterface $cache = null,
+        ?int                    $cache_ttl = null,
+        bool                    $debug_invalid_jwt = false,
     ) {
         $this->issuer = $issuer;
         $this->default_audience = $audience;
@@ -45,7 +48,8 @@ class AuthService {
         $this->namespace_projects = $namespace_projects;
         $this->allowed_audiences = $allowed_audiences;
         $this->cache = $cache;
-        $this->debugInvalidJwt = $debugInvalidJwt;
+        $this->cache_ttl = $cache_ttl;
+        $this->debug_invalid_jwt = $debug_invalid_jwt;
     }
 
 
@@ -55,6 +59,8 @@ class AuthService {
             'clientId' => $this->client_id,
             //'clientSecret' => $this->client_secret,
             'audience' => $audience ? [$audience] : null,
+            'tokenCache' => $this->cache,
+            'tokenCacheTtl' => $this->cache_ttl,
         ]);
     }
 
@@ -90,7 +96,7 @@ class AuthService {
                 }
             }
         } catch(InvalidTokenException $e) {
-            if($this->debugInvalidJwt) {
+            if($this->debug_invalid_jwt) {
                 throw $e;
             }
             return null;
