@@ -79,22 +79,19 @@ class AuthService {
                 $token, null, null, null, null, null, null, Token::TYPE_TOKEN,
             );
 
-            // todo: get rid of this re-conversion, needed for auth0 v8 compatibility
-            $tokenInfo = json_decode(json_encode($tokenInfoRes->toArray(), JSON_THROW_ON_ERROR), false, 512, JSON_THROW_ON_ERROR);
-            if($tokenInfo instanceof \stdClass) {
-                $tokenInfo = get_object_vars($tokenInfo);
-                foreach($tokenInfo as $key => $info) {
-                    if(str_starts_with($key, $this->namespace_user_data . '/')) {
-                        $user_data[substr($key, strlen($this->namespace_user_data . '/'))] = $info;
-                    } else if(str_starts_with($key, $this->namespace_projects . '/')) {
-                        $projects[substr($key, strlen($this->namespace_projects . '/'))] = $info;
-                    } else if($key === 'scope') {
-                        $token_data['scope'] = explode(' ', $info);
-                    } else {
-                        $token_data[$key] = $info;
-                    }
+            $tokenInfo = $tokenInfoRes->toArray();
+            foreach($tokenInfo as $key => $info) {
+                if(str_starts_with($key, $this->namespace_user_data . '/')) {
+                    $user_data[substr($key, strlen($this->namespace_user_data . '/'))] = $info;
+                } else if(str_starts_with($key, $this->namespace_projects . '/')) {
+                    $projects[substr($key, strlen($this->namespace_projects . '/'))] = $info;
+                } else if($key === 'scope') {
+                    $token_data['scope'] = explode(' ', $info);
+                } else {
+                    $token_data[$key] = $info;
                 }
             }
+            //}
         } catch(InvalidTokenException $e) {
             if($this->debug_invalid_jwt) {
                 throw $e;

@@ -3,9 +3,19 @@
 namespace Bemit\AuthMiddleware\ValidateResult;
 
 class TokenData {
+    /**
+     * @var string[]|null
+     */
     protected ?array $scope = null;
     protected ?string $sub = null;
+    /**
+     * @var string[]|null
+     */
     protected ?array $permissions = null;
+    /**
+     * Further data associated with the token
+     * @var array|null
+     */
     protected ?array $data = null;
 
     public function __construct(array $data) {
@@ -34,5 +44,9 @@ class TokenData {
 
     public function getPermissions(): ?array {
         return $this->permissions;
+    }
+
+    public function getData(): ?array {
+        return $this->data;
     }
 }

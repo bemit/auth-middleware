@@ -98,7 +98,8 @@ $dependencies = [
             $_ENV['AUTH_CLIENT_AUDIENCE'],
         ])
         // optional, for jwks caching:
-        ->constructorParameter('cache', get(Psr\SimpleCache\CacheInterface::class)),
+        ->constructorParameter('cache', get(Psr\Cache\CacheItemPoolInterface::class))
+        ->constructorParameter('cache_ttl', 360),
     Bemit\AuthMiddleware\Auth0Service::class => autowire()
         ->constructorParameter('issuer', $_ENV['AUTH_CLIENT_ISSUER'])
         ->constructorParameter('client_id', $_ENV['AUTH0_CLIENT_ID'])

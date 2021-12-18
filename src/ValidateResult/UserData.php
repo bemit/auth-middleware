@@ -4,6 +4,10 @@ namespace Bemit\AuthMiddleware\ValidateResult;
 
 class UserData {
     protected ?string $email = null;
+    /**
+     * Further data associated with the token in the `userdata` namespace
+     * @var array|null
+     */
     protected ?array $data = null;
 
     public function __construct(array $data) {
@@ -16,5 +20,9 @@ class UserData {
 
     public function getEmail(): ?string {
         return $this->email;
+    }
+
+    public function getData(): ?array {
+        return $this->data;
     }
 }
